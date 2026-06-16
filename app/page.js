@@ -1,65 +1,133 @@
-import Image from "next/image";
+"use client"
+
+import { useEffect, useState, useRef } from 'react'
+import { supabase } from '@/lib/supabase'
+import { fetchFish, subscribeToFish } from '@/lib/fish'
+import AddFishModal from '@/app/components/AddFishModal'
+
+
+
+
+const speedMultiplier = 0.8;
 
 export default function Home() {
+  const [fish, setFish] = useState([])
+  const [showModal, setShowModal] = useState(false)
+  const fishStateRef = useRef({}) 
+  const canvasRef = useRef(null)
+  const animFrameRef = useRef(null)
+  const fishRef = useRef([])
+
+  useEffect(() => {
+    fishRef.current = fish
+  }, [fish])
+  useEffect(() => {
+    fish.forEach(f => {
+      if (!fishStateRef.current[f.id]) {
+        fishStateRef.current[f.id] = {
+          x: Math.random() * (window.innerWidth - 100) + 50,
+          y: Math.random() * (window.innerHeight - 100) + 50,
+          vx: (Math.random() * 2 + 1) * (Math.random() > 0.5 ? 1 : -1) * speedMultiplier,
+          vy: (Math.random() * 1 + 0.5) * (Math.random() > 0.5 ? 1 : -1) * speedMultiplier,
+          time: Math.random() * Math.PI * 2,
+        }
+      }
+    })
+  }, [fish])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = '#0a1628'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      fishRef.current.forEach(f => {
+        const state = fishStateRef.current[f.id]
+        console.log(state)
+        if (!state) return
+        
+        state.time += 0.05
+        state.x += state.vx
+        state.y += state.vy + Math.sin(state.time) * 0.8
+        
+
+
+        if (state.x < 50 || state.x > canvas.width - 50) state.vx *= -1
+        if (state.y < 50 || state.y > canvas.height - 50) state.vy *= -1
+
+        ctx.save()
+        ctx.translate(state.x, state.y)
+        const angle = Math.atan2(state.vy + Math.sin(state.time) * 0.2, state.vx)
+        ctx.rotate(angle) 
+        if (state.vx < 0) ctx.scale(1, -1) 
+
+        ctx.fillStyle = fish.color ?? '#ff6b6b'
+        ctx.beginPath()
+        ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+
+        ctx.fillStyle = 'white'
+        ctx.font = '11px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(f.name, state.x, state.y + 25)
+      });
+
+      animFrameRef.current = requestAnimationFrame(draw)
+    }
+    animFrameRef.current = requestAnimationFrame(draw)
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current)
+      window.removeEventListener('resize', resize)
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFish().then(setFish)
+    
+    const channel = subscribeToFish((payload) => {
+      if (payload.eventType === 'INSERT') {
+        setFish(prev => [...prev, payload.new])
+      } else if (payload.eventType === 'DELETE') {
+        setFish(prev => prev.filter(f => f.id !== payload.old.id))
+      }
+    })
+
+    return () => supabase.removeChannel(channel)
+  }, [])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    <main style={{ margin: 0, overflow: 'hidden' }}>
+      <canvas ref={canvasRef} style={{ display: 'block' }} />
+      <button
+        onClick={() => setShowModal(true)}
+        style={{
+          position: 'fixed', bottom: 24, right: 24,
+          background: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: 50,
+          width: 52, height: 52,
+          fontSize: 24,
+          cursor: 'pointer',
+          zIndex: 10,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        }}
+      >
+        +
+      </button>
+
+      {showModal && <AddFishModal onClose={() => setShowModal(false)} />}
+    </main>
+  )
 }
