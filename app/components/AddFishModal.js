@@ -4,26 +4,32 @@ import { useState } from 'react'
 import { addFish } from '@/lib/fish'
 
 const SPECIES = [
-  'Clownfish',
-  'Blue Tang',
-  'Goldfish',
-  'Angelfish',
-  'Betta',
-  'Guppy',
   'Salmon',
-  'Tuna',
+  'Anchovy',
+  'Pufferfish',
+  'Sea Angel',
+  'Shrimp'
 ]
 
 export default function AddFishModal({ onClose }) {
   const [name, setName] = useState('')
   const [species, setSpecies] = useState(SPECIES[0])
-  const [color, setColor] = useState('#ff6b6b')
+ 
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
     if (!name.trim()) return
     setLoading(true)
-    await addFish({ name, species, color })
+    if (species == 'Shrimp'){
+        if(Math.random() < 0.05){
+            await addFish({ name, species: "Shrimp Chef"})
+        }else{
+            await addFish({ name, species })
+        }
+    }else{
+        await addFish({ name, species })
+    }   
+    
     setLoading(false)
     onClose()
   }
@@ -53,7 +59,7 @@ export default function AddFishModal({ onClose }) {
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="e.g. Nemo"
+            placeholder="Name of Fih"
             style={{
               padding: '8px 12px',
               borderRadius: 8,
@@ -85,22 +91,7 @@ export default function AddFishModal({ onClose }) {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label>Color</label>
-          <input
-            type="color"
-            value={color}
-            onChange={e => setColor(e.target.value)}
-            style={{
-              width: '100%', height: 40,
-              borderRadius: 8,
-              border: '1px solid #1e3a5f',
-              background: '#0a1628',
-              cursor: 'pointer',
-              padding: 2,
-            }}
-          />
-        </div>
+       
 
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           <button
