@@ -6,13 +6,16 @@ import { fetchFish, subscribeToFish } from '@/lib/fish'
 import AddFishModal from '@/app/components/AddFishModal'
 import { Vazirmatn } from 'next/font/google'
 
-
+import { Metadata } from 'next';
 
 
 const speedMultiplier = 0.8;
 
 
-
+export const metadata = {
+  title: 'Aryan and Caseii\'s Aquarium',
+  description: 'Aquarium for Cas',
+};
 
 export default function Home() {
   const [fish, setFish] = useState([])
