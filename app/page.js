@@ -54,15 +54,18 @@ export default function Home() {
       loadImage('/Anchovy.png'),
       loadImage('/SeaAngel.png'),
       loadImage('/Shrimp.png'),
-      loadImage('/ShrimpChef.png')
-    ]).then(([salmon, pufferfish, anchovy, seaAngel, shrimp, shrimpChef]) => {
+      loadImage('/ShrimpChef.png'),
+      loadImage('/Squid.png'),
+      loadImage('/Seaweed.png')
+    ]).then(([salmon, pufferfish, anchovy, seaAngel, shrimp, shrimpChef,squid,seaweed]) => {
       const imageMap = {
         Salmon: salmon,
         Pufferfish: pufferfish,
         Anchovy: anchovy,
         "Sea Angel": seaAngel,
         Shrimp : shrimp,
-        "Shrimp Chef" : shrimpChef
+        "Shrimp Chef" : shrimpChef,
+        Squid : squid,
       }
       const sizingMap = {
         Salmon: 1,
@@ -70,7 +73,8 @@ export default function Home() {
         Anchovy: 1,
         "Sea Angel": 1,
         Shrimp : 0.4,
-        "Shrimp Chef" : 1
+        "Shrimp Chef" : 1,
+        Squid : 0.7
       }
 
       const canvas = canvasRef.current
@@ -117,7 +121,10 @@ export default function Home() {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         foodsRef.current.forEach((food, i) => {
-          foodsRef.current[i].y += 0.3
+          if(food.y < canvas.height - 20){
+            foodsRef.current[i].y += 0.3;
+          }
+          
           ctx.save()
           ctx.fillStyle = '#f4a261'
           ctx.beginPath()
@@ -143,6 +150,12 @@ export default function Home() {
 
         ctx.fillStyle = '#1a1a2e'
         ctx.fillRect(0, canvas.height - 40, canvas.width, 40)
+        
+        ctx.drawImage(seaweed, canvas.width * 0.5, canvas.height - 120, 100,100);
+        ctx.drawImage(seaweed, canvas.width * 0.1, canvas.height - 120, 100,100);
+        ctx.drawImage(seaweed, canvas.width * 0.27, canvas.height - 120, 100,100);
+        ctx.drawImage(seaweed, canvas.width * 0.8, canvas.height - 120, 100,100);
+        ctx.drawImage(seaweed, canvas.width * 0.72, canvas.height - 120, 100,100);
 
      
 
@@ -218,7 +231,7 @@ export default function Home() {
           ctx.translate(state.x, state.y)
           var angle = Math.atan2(state.vy + Math.sin(state.time * 1.5) * 0.2, state.vx)
           
-          if(f.species == "Sea Angel"){
+          if(f.species == "Sea Angel" || f.species == "Squid"){
             const maxAngle = 0.3;
             if(angle > maxAngle){
               angle = maxAngle;

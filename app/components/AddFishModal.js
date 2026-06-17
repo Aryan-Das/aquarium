@@ -8,7 +8,8 @@ const SPECIES = [
   'Anchovy',
   'Pufferfish',
   'Sea Angel',
-  'Shrimp'
+  'Shrimp',
+  'Squid',
 ]
 
 export default function AddFishModal({ onClose }) {
