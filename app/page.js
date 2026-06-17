@@ -121,8 +121,11 @@ export default function Home() {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         foodsRef.current.forEach((food, i) => {
-          if(food.y < canvas.height - 20){
+          if(food.y < canvas.height - 40){
             foodsRef.current[i].y += 0.3;
+          }
+          if(food.y > canvas.height - 40){
+            food.y = canvas.height - 40;
           }
           
           ctx.save()
