@@ -10,6 +10,9 @@ import AddFishModal from '@/app/components/AddFishModal'
 
 const speedMultiplier = 0.8;
 
+
+
+
 export default function Home() {
   const [fish, setFish] = useState([])
   const [showModal, setShowModal] = useState(false)
@@ -36,56 +39,86 @@ export default function Home() {
   }, [fish])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
 
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resize()
-    window.addEventListener('resize', resize)
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = '#0a1628'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const loadImage = (src) => new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => resolve(null) 
+      img.src = src
+    })
 
-      fishRef.current.forEach(f => {
-        const state = fishStateRef.current[f.id]
-        console.log(state)
-        if (!state) return
-        
-        state.time += 0.05
-        state.x += state.vx
-        state.y += state.vy + Math.sin(state.time) * 0.8
-        
+    Promise.all([
+      loadImage('/Salmon.png'),
+      loadImage('/Pufferfish.png'),
+      loadImage('/Anchovy.png'),
+    ]).then(([salmon, pufferfish, anchovy]) => {
+      const imageMap = {
+        Salmon: salmon,
+        Pufferfish: pufferfish,
+        Anchovy: anchovy,
+      }
+   
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+
+      const resize = () => {
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+      }
+      resize()
+      window.addEventListener('resize', resize)
+      const draw = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.fillStyle = '#0a1628'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        fishRef.current.forEach(f => {
+          const state = fishStateRef.current[f.id]
+          
+          console.log(state)
+          if (!state) return
+          
+          state.time += 0.05
+          state.x += state.vx
+          state.y += state.vy + Math.sin(state.time) * 0.8
+          
 
 
-        if (state.x < 50 || state.x > canvas.width - 50) state.vx *= -1
-        if (state.y < 50 || state.y > canvas.height - 50) state.vy *= -1
+          if (state.x < 50) { state.x = 50; state.vx *= -1 }
+          if (state.x > canvas.width - 50) { state.x = canvas.width - 50; state.vx *= -1 }
+          if (state.y < 50) { state.y = 50; state.vy *= -1 }
+          if (state.y > canvas.height - 50) { state.y = canvas.height - 50; state.vy *= -1 }
 
-        ctx.save()
-        ctx.translate(state.x, state.y)
-        const angle = Math.atan2(state.vy + Math.sin(state.time) * 0.2, state.vx)
-        ctx.rotate(angle) 
-        if (state.vx < 0) ctx.scale(1, -1) 
+          ctx.save()
+          ctx.translate(state.x, state.y)
+          const angle = Math.atan2(state.vy + Math.sin(state.time) * 0.2, state.vx)
+          ctx.rotate(angle)
+          if (state.vx < 0) ctx.scale(-1, -1)
+          else ctx.scale(-1,1)
 
-        ctx.fillStyle = fish.color ?? '#ff6b6b'
-        ctx.beginPath()
-        ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.restore()
+          const img = imageMap[f.species]
+          if (img) {
+            ctx.drawImage(img, -50, -50, 100, 100) 
+          } else {
+            ctx.fillStyle = f.color ?? '#ff6b6b'
+            ctx.beginPath()
+            ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI * 2)
+            ctx.fill()
+          }
 
-        ctx.fillStyle = 'white'
-        ctx.font = '11px sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText(f.name, state.x, state.y + 25)
-      });
+          ctx.restore()
 
+
+          ctx.fillStyle = 'white'
+          ctx.font = '11px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText(f.name, state.x, state.y + 60)
+        });
+
+        animFrameRef.current = requestAnimationFrame(draw)
+      }
       animFrameRef.current = requestAnimationFrame(draw)
-    }
-    animFrameRef.current = requestAnimationFrame(draw)
-
+    })
     return () => {
       cancelAnimationFrame(animFrameRef.current)
       window.removeEventListener('resize', resize)
